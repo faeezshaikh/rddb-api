@@ -1,0 +1,14 @@
+# log4j.logger.org.springframework.jdbc.core = TRACE
+sqs:
+  url: # Placeholder for unit test (default profile)
+app:
+  defaultExper: -99999
+  defaultEssay: 1
+  defaultStrainId: 56334  # ( This is an unknown species )
+  defaultStorageConditions: 'RT'
+  defaultBadFlag: 'N'
+  defaultFlagActive: 'Y'
+  itgStatusCode: 'P'
+  flagActive: 'Y'
+  flagProduction: 'Y'
+  defaultUserField: 'SUSC'

@@ -1,0 +1,37 @@
+# log4j.logger.org.springframework.jdbc.core = TRACE
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  profiles:
+  application:
+    name: vitek-rddb-writeback-service
+info:
+  app:
+    name: RDDB Writeback Service
+    description: Service to read messages from an event broker (SQS) and write records in RDDB (Oracle)
+    version: 1.0.0.
+
+management:
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      cors:
+        allowed-origins: "*"
+        allowed-methods: GET
+      exposure:
+        include: health,info,refresh
+
+server:
+  port: 8080
+  servlet:
+    context-path: /rddb-writeback-service
+
+# logging:
+#   level:
+#     org.springframework.jdbc.core: INFO
+
+
+
+

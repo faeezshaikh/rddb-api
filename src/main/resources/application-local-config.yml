@@ -1,0 +1,46 @@
+# log4j.logger.org.springframework.jdbc.core = TRACE
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  application:
+    name: rddb-writeback-service
+  datasource:
+  # url: jdbc:oracle:thin:@bmx-rddb-new.cb56ddv1apkl.us-east-1.rds.amazonaws.com:1521:stldev1
+    url: jdbc:oracle:thin:@localhost:1521:stldev1
+#    url: jdbc:oracle:thin:@10.16.2.21:1521:stldev1
+    username: VERDE_DEV1_USER
+    password: VERDE_DEV1_USER
+    driver-class-name: oracle.jdbc.driver.OracleDriver
+
+  jpa:
+    show-sql: false
+    # hibernate:
+    #ddl-auto: create-drop ## use create when running the app for the first time then change to "update" which just updates the schema when necessary
+    database-platform: org.hibernate.dialect.Oracle10gDialect
+
+logging:
+  level:
+    org.springframework.jdbc.core: INFO
+
+server:
+  port: 8082
+
+sqs:
+  url: https://sqs.us-east-1.amazonaws.com/635283063535/verde-q-bbay
+
+app:
+  defaultExper: -99999
+  defaultEssay: 1
+  defaultStrainId: 56334  # ( This is an unknown species )
+  defaultStorageConditions: 'RT'
+  defaultBadFlag: 'N'
+  defaultFlagActive: 'Y'
+  itgStatusCode: 'P'
+  flagActive: 'Y'
+  flagProduction: 'Y'
+  defaultUserField: 'SUSC'
+
+
+
+
+

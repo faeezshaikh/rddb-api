@@ -1,0 +1,98 @@
+image: openjdk:11-jre-slim
+
+variables:
+  DOCKER_REPO_URL: 635283063535.dkr.ecr.us-east-1.amazonaws.com/ussd-rddb-writeback-service
+  ECS_TASK_DEF: rddb-writeback-service-app-task
+
+stages:
+  - build
+  - test
+  - publish-coverage
+  - deploy
+
+before_script:
+  - docker info
+  - echo `pwd` # debug
+  - echo "$CI_BUILD_NAME, $CI_BUILD_REF_NAME $CI_BUILD_STAGE" # debug
+  - IMAGE_TAG=${CI_COMMIT_SHA:=latest}
+  - echo "image tag ${IMAGE_TAG}"
+  - DOCKER_IMAGE_APP_TAG=com.biomerieux.ussd/rddb-writeback-service:latest
+  - echo "image app tag ${DOCKER_IMAGE_APP_TAG}"
+
+cache:
+  paths:
+    - .gradle/wrapper
+    - .gradle/caches
+
+build:
+  environment:
+    name: sandbox
+  stage: build
+  script:
+    - $(aws ecr get-login --no-include-email --region us-east-1)
+    - ./gradlew clean build docker
+    - docker tag ${DOCKER_IMAGE_APP_TAG} ${DOCKER_REPO_URL}:latest
+    - docker tag ${DOCKER_IMAGE_APP_TAG} ${DOCKER_REPO_URL}:${IMAGE_TAG}
+    - docker push $DOCKER_REPO_URL:latest
+    - docker push $DOCKER_REPO_URL:$IMAGE_TAG
+  artifacts:
+    paths:
+      - build/libs/*.jar
+    reports:
+      junit: build/test-results/test/**/TEST-*.xml
+    expire_in: 1 week
+  only:
+    - develop
+
+test:
+  stage: test
+  script:
+    - ./gradlew check jacocoTestReport
+  artifacts:
+    paths:
+      - build/reports/jacoco
+
+pages:
+  stage: publish-coverage
+  dependencies:
+    - test
+  script:
+    - mkdir public
+    - mv build/reports/jacoco/test/html/* public/
+  artifacts:
+    paths:
+      - public
+  only:
+    - develop
+
+deploy_sandbox:
+  stage: deploy
+  script:
+    - echo "Deploy to sandbox server"
+    - aws/create_task_aws_sandbox.sh > build/ecs-task.json
+    - aws ecs register-task-definition --family "${ECS_TASK_DEF}" --cli-input-json "file://build/ecs-task.json"
+    - aws ecs update-service --cluster ussd-sb-ecs-cluster --service rddb-writeback-service --task-definition rddb-writeback-service-app-task --force-new-deployment
+  environment:
+    name: sandbox
+    url: http://internal-ussd-sb-ecs-load-balancer-1134396084.us-east-1.elb.amazonaws.com/rddb-writeback-service
+  only:
+    - develop
+
+deploy_dev:
+  stage: deploy
+  script:
+    - echo "Deploy to development server"
+    - aws ecr get-login --registry-ids 635283063535 --region us-east-1
+    - aws/create_task_aws_dev.sh > build/dev-ecs-task.json
+    - aws ecs register-task-definition --family "${ECS_TASK_DEF}" --cli-input-json "file://build/dev-ecs-task.json"
+    - aws ecs update-service --cluster ussd-dev-ecs-cluster --service rddb-writeback-service --task-definition rddb-writeback-service-app-task --force-new-deployment
+  environment:
+    name: develop
+    url: http://internal-ussd-sb-ecs-load-balancer-1134396084.us-east-1.elb.amazonaws.com/rddb-writeback-service
+  when: manual
+  only:
+    - develop
+
+
+after_script:
+  - echo "Finished running"
